@@ -22,7 +22,7 @@ BUILD_ASSERT(sizeof(CONFIG_MQTT_CLOUD_BROKER_HOST_NAME) > 1,
 #define AWS_AF_FAMILY AF_INET
 #endif
 
-#define AWS_TOPIC "$aws/things/"
+#define AWS_TOPIC "things/"
 #define AWS_TOPIC_LEN (sizeof(AWS_TOPIC) - 1)
 
 #define AWS_CLIENT_ID_PREFIX "%s"
