@@ -643,7 +643,7 @@ static int client_broker_init(struct mqtt_client *const client)
 	client->rx_buf_size		= sizeof(rx_buffer);
 	client->tx_buf			= tx_buffer;
 	client->tx_buf_size		= sizeof(tx_buffer);
-	client->transport.type		= MQTT_TRANSPORT_SECURE;
+	client->transport.type		= MQTT_TRANSPORT_NON_SECURE;
 
 #if defined(CONFIG_MQTT_CLOUD_PERSISTENT_SESSIONS)
 	client->clean_session		= 0U;
