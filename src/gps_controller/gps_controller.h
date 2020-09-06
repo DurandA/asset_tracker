@@ -14,6 +14,11 @@
 
 #include <zephyr.h>
 
+#ifdef CONFIG_SUPL_CLIENT_LIB
+#include <supl_os_client.h>
+#include <supl_session.h>
+#endif /* CONFIG_SUPL_CLIENT_LIB */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +38,13 @@ bool gps_control_is_active(void);
 int gps_control_get_gps_reporting_interval(void);
 
 bool gps_control_set_active(bool active);
+
+#ifdef CONFIG_SUPL_CLIENT_LIB
+int inject_agps_type(void *agps,
+		     size_t agps_size,
+		     nrf_gnss_agps_data_type_t type,
+		     void *user_data);
+#endif /* CONFIG_SUPL_CLIENT_LIB */
 
 #ifdef __cplusplus
 }

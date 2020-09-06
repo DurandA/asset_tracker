@@ -24,6 +24,22 @@ static struct k_delayed_work start_work;
 static struct k_delayed_work stop_work;
 static int gps_reporting_interval_seconds;
 
+#ifdef CONFIG_SUPL_CLIENT_LIB
+static enum gps_agps_type type_lookup_socket2gps[] = {
+	[NRF_GNSS_AGPS_UTC_PARAMETERS]	= GPS_AGPS_UTC_PARAMETERS,
+	[NRF_GNSS_AGPS_EPHEMERIDES]	= GPS_AGPS_EPHEMERIDES,
+	[NRF_GNSS_AGPS_ALMANAC]		= GPS_AGPS_ALMANAC,
+	[NRF_GNSS_AGPS_KLOBUCHAR_IONOSPHERIC_CORRECTION]
+					= GPS_AGPS_KLOBUCHAR_CORRECTION,
+	[NRF_GNSS_AGPS_NEQUICK_IONOSPHERIC_CORRECTION]
+					= GPS_AGPS_NEQUICK_CORRECTION,
+	[NRF_GNSS_AGPS_GPS_SYSTEM_CLOCK_AND_TOWS]
+					= GPS_AGPS_GPS_SYSTEM_CLOCK_AND_TOWS,
+	[NRF_GNSS_AGPS_LOCATION]	= GPS_AGPS_LOCATION,
+	[NRF_GNSS_AGPS_INTEGRITY]	= GPS_AGPS_INTEGRITY,
+};
+#endif /* CONFIG_SUPL_CLIENT_LIB */
+
 static void start(struct k_work *work)
 {
 	ARG_UNUSED(work);
@@ -187,3 +203,21 @@ int gps_control_init(struct k_work_q *work_q, gps_event_handler_t handler)
 
 	return err;
 }
+
+#ifdef CONFIG_SUPL_CLIENT_LIB
+static inline enum gps_agps_type type_socket2gps(
+	nrf_gnss_agps_data_type_t type)
+{
+	return type_lookup_socket2gps[type];
+}
+
+int inject_agps_type(void *agps,
+		     size_t agps_size,
+		     nrf_gnss_agps_data_type_t type,
+		     void *user_data)
+{
+	ARG_UNUSED(user_data);
+	return gps_agps_write(gps_dev, type_socket2gps(type), agps,
+				agps_size);
+}
+#endif /* CONFIG_SUPL_CLIENT_LIB */

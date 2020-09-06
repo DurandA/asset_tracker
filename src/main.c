@@ -25,6 +25,11 @@
 #if defined(CONFIG_NRF_CLOUD_AGPS)
 #include <net/nrf_cloud_agps.h>
 #endif
+#ifdef CONFIG_SUPL_CLIENT_LIB
+#include <supl_os_client.h>
+#include <supl_session.h>
+#include "supl_support.h"
+#endif /* CONFIG_SUPL_CLIENT_LIB */
 
 #if defined(CONFIG_LWM2M_CARRIER)
 #include <lwm2m_carrier.h>
@@ -106,6 +111,7 @@ static struct k_work_q application_work_q;
 static struct cloud_backend *cloud_backend;
 
 /* Sensor data */
+static struct gps_agps_request agps_request;
 static struct gps_nmea gps_data;
 static struct cloud_channel_data gps_cloud_data = {
 	.type = CLOUD_CHANNEL_GPS,
@@ -395,6 +401,18 @@ static void send_agps_request(struct k_work *work)
 
 	LOG_INF("A-GPS request sent");
 #endif /* defined(CONFIG_NRF_CLOUD_AGPS) */
+#ifdef CONFIG_SUPL_CLIENT_LIB
+	printk("\033[1;1H");
+	printk("\033[2J");
+	printk("New AGPS data requested, contacting SUPL server, flags %d\n",
+			((nrf_gnss_agps_data_frame_t*)&agps_request)->data_flags);
+	if (open_supl_socket() == 0) {
+		printf("Starting SUPL session\n");
+		supl_session((nrf_gnss_agps_data_frame_t*)&agps_request);
+		printk("Done\n");
+		close_supl_socket();
+	}
+#endif /* CONFIG_SUPL_CLIENT_LIB */
 }
 
 void cloud_connect_error_handler(enum cloud_connect_result err)
@@ -682,6 +700,7 @@ static void gps_handler(struct device *dev, struct gps_event *evt)
 		/* Send A-GPS request with short delay to avoid LTE network-
 		 * dependent corner-case where the request would not be sent.
 		 */
+		agps_request = evt->agps_request;
 		k_delayed_work_submit_to_queue(&application_work_q,
 					       &send_agps_request_work,
 					       K_SECONDS(1));
@@ -1785,5 +1804,17 @@ void main(void)
 	k_sem_take(&cloud_ready_to_connect, K_FOREVER);
 #endif
 
+#ifdef CONFIG_SUPL_CLIENT_LIB
+	static struct supl_api supl_api = {
+		.read       = supl_read,
+		.write      = supl_write,
+		.handler    = inject_agps_type,
+		.logger     = supl_logger,
+		.counter_ms = k_uptime_get
+	};
+	if (supl_init(&supl_api) != 0) {
+		LOG_ERR("Failed to initialize libsupl");
+	};
+#endif /* CONFIG_SUPL_CLIENT_LIB */
 	connect_to_cloud(0);
 }
