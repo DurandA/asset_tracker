@@ -441,7 +441,11 @@ static void mqtt_evt_handler(struct mqtt_client *const c,
 			break;
 		}
 
-		if (!mqtt_evt->param.connack.session_present_flag) {
+		bool session_present = false;
+#if defined(CONFIG_AWS_IOT_PERSISTENT_SESSIONS)
+		session_present = mqtt_evt->param.connack.session_present_flag;
+#endif
+		if (!session_present) {
 			topic_subscribe();
 		}
 
@@ -647,6 +651,8 @@ static int client_broker_init(struct mqtt_client *const client)
 
 #if defined(CONFIG_MQTT_CLOUD_PERSISTENT_SESSIONS)
 	client->clean_session		= 0U;
+#else
+	client->clean_session		= MQTT_CLEAN_SESSION;
 #endif
 
 	static sec_tag_t sec_tag_list[] = { CONFIG_MQTT_CLOUD_SEC_TAG };
